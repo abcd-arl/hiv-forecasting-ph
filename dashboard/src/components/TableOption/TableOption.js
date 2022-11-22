@@ -6,6 +6,7 @@ const isValid = (value) => value === 'NaN' || (!isNaN(value) && value > 0);
 export default function TableOption({
 	table,
 	dispatch,
+	setDefValLastIndex,
 	setData,
 	cookies,
 	isAdmin,
@@ -163,6 +164,7 @@ export default function TableOption({
 				console.log('success', response);
 				displayAlert('success', 'The table has been successfuly updated.');
 				setData(response.data);
+				setDefValLastIndex(response.data.actual.cases.length - 1);
 			})
 			.catch((error) => {
 				setIsLoadingCharts(false);

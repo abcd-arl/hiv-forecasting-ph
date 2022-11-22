@@ -9,21 +9,30 @@ import { useEffect, useState } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useCookies } from 'react-cookie';
 import axios from 'axios';
+import { Helmet } from 'react-helmet';
 import { ReactNotifications } from 'react-notifications-component';
 import 'react-notifications-component/dist/theme.css';
 import 'animate.css/animate.min.css';
 
 function App() {
 	const [data, setData] = useState([]);
-	const [cookies, setCookie, removeCookie] = useCookies(['token']);
+	const [editedData, setEditedData] = useState([]);
 	const [isLoadingCharts, setIsLoadingCharts] = useState(false);
+	const [cookies, setCookie, removeCookie] = useCookies(['token']);
+	const [defValLastIndex, setDefValLastIndex] = useState(null);
 	const location = useLocation();
+
+	useEffect(() => {
+		setEditedData(data);
+	}, [data]);
 
 	useEffect(() => {
 		axios
 			.get('https://hiv-forecasting-ph-api.herokuapp.com/api/v1/forecast/')
 			.then((response) => {
 				setData(response.data);
+				setEditedData(response.data);
+				setDefValLastIndex(response.data.actual.cases.length - 1);
 			})
 			.catch((error) => {
 				console.log(error.message);
@@ -67,6 +76,8 @@ function App() {
 								<Table
 									dataset={data.actual}
 									setData={setData}
+									defValLastIndex={defValLastIndex}
+									setDefValLastIndex={setDefValLastIndex}
 									isAdmin={true}
 									cookies={cookies}
 									setIsLoadingCharts={setIsLoadingCharts}
@@ -84,7 +95,7 @@ function App() {
 								<div className="mb-4 md:flex gap-4">
 									<div className="md:w-2/4">
 										<LineChart
-											datasets={[data.actual, data.validation]}
+											datasets={[editedData.actual, editedData.validation]}
 											colors={['#1d4ed8', '#e11d48']}
 											title={'Actual Values vs Model Forecasted Values'}
 										/>
@@ -113,54 +124,71 @@ function App() {
 								</div>
 								<div className="mb-10 md:flex gap-4">
 									<div className="md:w-2/4">
-										<BarChart dataset={data.forecast} title={'12-Month Forecast'} />
+										<BarChart dataset={editedData.forecast} title={'12-Month Forecast'} />
 									</div>
 									<div className="md:w-2/4">
-										<LineChart datasets={[data.residuals]} colors={['#e11d48']} title={'Residuals'} />
+										<LineChart datasets={[editedData.residuals]} colors={['#e11d48']} title={'Residuals'} />
 									</div>
 								</div>
 							</div>
 						</div>
-						<Table dataset={data.actual} setData={setData} setIsLoadingCharts={setIsLoadingCharts} />
+						<Table
+							dataset={editedData.actual}
+							setData={setEditedData}
+							setIsLoadingCharts={setIsLoadingCharts}
+							defValLastIndex={defValLastIndex}
+							setDefValLastIndex={setDefValLastIndex}
+						/>
 					</>
 				);
 		}
 	}
 
 	return (
-		<div className="my-10 w-full">
-			<div className="w-[96%] mx-auto">
-				<ReactNotifications />
-				<div className="w-full max-w-[1050px] mx-auto">
-					<header className="mb-10 flex justify-between items-end">
-						<h1 className="text-4xl font-bold">
-							<Link to="/">
-								<span className="text-rose-500">HIV</span>Forecasting
-							</Link>
-						</h1>
-						{cookies.token && (
-							<div className="flex gap-4">
-								{location.pathname.indexOf('/admin') !== 0 && (
-									<Link to="/admin" className="text-sm font-bold text-slate-500">
-										Admin
-									</Link>
-								)}
+		<>
+			<Helmet>
+				<meta name="description" content="Dashboard for forecasting new monthly HIV cases in the Philippines." />
+				{location.pathname.indexOf('/admin') !== 0 ? (
+					<title>Dashboard | HIV Forecasting PH</title>
+				) : (
+					<title>Admin | HIV Forecasting PH</title>
+				)}
+			</Helmet>
 
-								<button className="text-sm font-bold text-red-400" onClick={handleOnLogout}>
-									Logout
-								</button>
-							</div>
-						)}
-					</header>
-					<main>
-						<Routes>
-							<Route path="/" element={render()} />
-							<Route path="/admin" element={render('admin')} />
-						</Routes>
-					</main>
+			<div className="my-10 w-full">
+				<div className="w-[96%] mx-auto">
+					<ReactNotifications />
+					<div className="w-full max-w-[1050px] mx-auto">
+						<header className="mb-10 flex justify-between items-end">
+							<h1 className="text-4xl font-bold">
+								<Link to="/">
+									<span className="text-rose-500">HIV</span>Forecasting
+								</Link>
+							</h1>
+							{cookies.token && (
+								<div className="flex gap-4">
+									{location.pathname.indexOf('/admin') !== 0 && (
+										<Link to="/admin" className="text-sm font-bold text-slate-500">
+											Admin
+										</Link>
+									)}
+
+									<button className="text-sm font-bold text-red-400" onClick={handleOnLogout}>
+										Logout
+									</button>
+								</div>
+							)}
+						</header>
+						<main>
+							<Routes>
+								<Route path="/" element={render()} />
+								<Route path="/admin" element={render('admin')} />
+							</Routes>
+						</main>
+					</div>
 				</div>
 			</div>
-		</div>
+		</>
 	);
 }
 

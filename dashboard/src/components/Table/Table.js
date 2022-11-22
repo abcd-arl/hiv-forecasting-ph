@@ -165,8 +165,16 @@ const reducer = (state, action) => {
 	}
 };
 
-export default function Table({ dataset, setData, setIsLoadingCharts, isAdmin, cookies, updateTableAsAdmin }) {
-	const [defValLastIndex, setDefValLastIndex] = useState(null);
+export default function Table({
+	dataset,
+	setData,
+	defValLastIndex,
+	setDefValLastIndex,
+	setIsLoadingCharts,
+	isAdmin,
+	cookies,
+	updateTableAsAdmin,
+}) {
 	const [table, dispatch] = useReducer(reducer, {
 		values: [],
 		finalValues: [],
@@ -193,19 +201,15 @@ export default function Table({ dataset, setData, setIsLoadingCharts, isAdmin, c
 		console.log('final table values:', table.finalValues);
 		console.log('final table is recent:', table.isSaved);
 		console.log('is saivng', table.isSaving);
+		console.log('def val last index', defValLastIndex);
 		console.log('last def value', table.values[defValLastIndex]);
 		console.groupEnd();
 	});
 
 	useEffect(() => {
 		switch (table.activity.status) {
-			case 'initialized':
-				console.log('here');
-				setDefValLastIndex(table.values.length - 1);
-				break;
 			case 'updated':
 				if (table.isSaving) dispatch({ type: 'post-save' });
-
 				break;
 			case 'saved':
 			case 'post-saved':
@@ -218,8 +222,9 @@ export default function Table({ dataset, setData, setIsLoadingCharts, isAdmin, c
 	}, [table]);
 
 	useEffect(() => {
+		console.log('dataset', dataset);
 		if (isAdmin) dispatch({ type: 'initialize', dataset: dataset });
-	}, [dataset, isAdmin]);
+	}, [dataset, isAdmin, defValLastIndex]);
 
 	useEffect(() => {
 		dispatch({ type: 'initialize', dataset: dataset });
@@ -339,6 +344,7 @@ export default function Table({ dataset, setData, setIsLoadingCharts, isAdmin, c
 			<TableOption
 				table={table}
 				dispatch={dispatch}
+				setDefValLastIndex={setDefValLastIndex}
 				setData={setData}
 				cookies={cookies}
 				isAdmin={isAdmin}
