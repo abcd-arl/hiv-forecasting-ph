@@ -1,11 +1,13 @@
 import { useRef, useState } from 'react';
 import axios from 'axios';
+import ControlledPopup from '../ControlledPopup/ControlledPopup';
 
 const isValid = (value) => value === 'NaN' || (!isNaN(value) && value > 0);
 
 export default function TableOption({
 	table,
 	dispatch,
+	defValLastIndex,
 	setDefValLastIndex,
 	setData,
 	cookies,
@@ -28,7 +30,10 @@ export default function TableOption({
 			<div className="flex">
 				<button
 					className="px-2 py-1.5 mr-1.5 bg-slate-500 disabled:bg-slate-200 rounded font-bold text-white"
-					disabled={['editing', 'saving'].includes(table.activity.status)}
+					disabled={
+						(!isAdmin && defValLastIndex === table.values.length - 1) ||
+						['editing', 'saving'].includes(table.activity.status)
+					}
 					onClick={handleOnSelect}
 				>
 					{table.activity.status === 'selecting' ? 'Cancel' : 'Select'}
@@ -44,6 +49,10 @@ export default function TableOption({
 				<span className="flex items-center">more cell(s)</span>
 			</div>
 			<div>
+				<div className="inline-block">
+					<ControlledPopup />
+				</div>
+
 				<button
 					className="px-2 py-1.5 mr-1.5 bg-slate-500 disabled:bg-slate-200 rounded font-bold text-white"
 					disabled={table.isSaved}
@@ -84,6 +93,7 @@ export default function TableOption({
 		if (!inputDateRef.current.value) setIsInputDateEmpty((state) => true);
 		else setIsInputDateEmpty((state) => false);
 		console.log('date is empty', isInputDateEmpty);
+		console.log(inputDateRef.current.value);
 	}
 
 	function handleOnAdd(e) {
@@ -118,7 +128,8 @@ export default function TableOption({
 
 		axios
 			.post(
-				'https://hiv-forecasting-ph-api.herokuapp.com/api/v1/forecast/',
+				// 'https://hiv-forecasting-ph-api.herokuapp.com/api/v1/forecast/',
+				'http://127.0.0.1:8000/api/v1/forecast/',
 				{
 					cases: cases,
 					startDate: startDate,
@@ -145,7 +156,7 @@ export default function TableOption({
 		if (!table.isSaved && !window.confirm(message)) return;
 		setIsLoadingCharts(true);
 		const cases = table.finalValues.map((value) => parseInt(value));
-
+		console.log(inputDateRef.current.value);
 		axios
 			.post(
 				'https://hiv-forecasting-ph-api.herokuapp.com/api/v1/update-table/',

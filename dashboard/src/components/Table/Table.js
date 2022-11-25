@@ -344,6 +344,7 @@ export default function Table({
 			<TableOption
 				table={table}
 				dispatch={dispatch}
+				defValLastIndex={defValLastIndex}
 				setDefValLastIndex={setDefValLastIndex}
 				setData={setData}
 				cookies={cookies}

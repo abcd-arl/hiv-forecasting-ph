@@ -28,7 +28,8 @@ function App() {
 
 	useEffect(() => {
 		axios
-			.get('https://hiv-forecasting-ph-api.herokuapp.com/api/v1/forecast/')
+			// .get('https://hiv-forecasting-ph-api.herokuapp.com/api/v1/forecast/')
+			.get('http://127.0.0.1:8000/api/v1/forecast/')
 			.then((response) => {
 				setData(response.data);
 				setEditedData(response.data);
@@ -101,22 +102,28 @@ function App() {
 										/>
 									</div>
 									<div className="md:w-2/4 flex flex-col font-helvetica">
-										<span className="font-bold text-[11px] text-[#666] text-center relative top-3">
+										<span className="mb-5 font-bold text-[11px] text-[#666] text-center relative top-3">
 											Performance Measure
 										</span>
-										<div className="min-h-[170px] h-[80%] w-[90%] m-auto mr-[-.15rem] bg-40 bg-bottom bg-gradient-radial flex items-center">
-											<div className="w-full flex gap-2 justify-between">
-												<div className="flex flex-col">
-													<span className="text-xs text-rose-600 font-bold">MAE</span>
-													<span className="text-5xl text-blue-700">62.00</span>
+										<div className="min-h-[170px] md:h-[80%] h-[100%] w-[90%] m-auto mr-[-.15rem] bg-40 bg-bottom bg-gradient-radial flex items-center">
+											<div className="w-full flex flex-col sm:flex-row items-center gap-2 justify-between">
+												<div className="flex flex-col-reverse sm:flex-col">
+													<span className="text-xs text-center sm:text-left text-rose-600 font-bold">MAE</span>
+													<span className="text-[2.5rem] md:text-2xl lg:text-4xl text-blue-700">
+														{editedData.performanceMeasures.mae}
+													</span>
 												</div>
-												<div className="flex flex-col">
-													<span className="text-xs text-rose-600 font-bold">MSE</span>
-													<span className="text-5xl text-blue-700">92.00</span>
+												<div className="flex flex-col-reverse sm:flex-col">
+													<span className="text-xs text-center sm:text-left text-rose-600 font-bold">MSE</span>
+													<span className="text-[2.5rem] md:text-2xl lg:text-4xl text-blue-700">
+														{editedData.performanceMeasures.mse}
+													</span>
 												</div>
-												<div className="flex flex-col">
-													<span className="text-xs text-rose-600 font-bold">MAPE</span>
-													<span className="text-5xl text-blue-700">22%</span>
+												<div className="flex flex-col-reverse sm:flex-col">
+													<span className="text-xs text-center sm:text-left text-rose-600 font-bold">MAPE</span>
+													<span className="text-[2.5rem] md:text-2xl lg:text-4xl text-blue-700">
+														{editedData.performanceMeasures.mape}%
+													</span>
 												</div>
 											</div>
 										</div>
@@ -147,7 +154,6 @@ function App() {
 	return (
 		<>
 			<Helmet>
-				<meta name="description" content="Dashboard for forecasting new monthly HIV cases in the Philippines." />
 				{location.pathname.indexOf('/admin') !== 0 ? (
 					<title>Dashboard | HIV Forecasting PH</title>
 				) : (
