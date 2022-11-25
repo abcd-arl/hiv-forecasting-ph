@@ -128,8 +128,7 @@ export default function TableOption({
 
 		axios
 			.post(
-				// 'https://hiv-forecasting-ph-api.herokuapp.com/api/v1/forecast/',
-				'http://127.0.0.1:8000/api/v1/forecast/',
+				'https://hiv-forecasting-ph-api.herokuapp.com/api/v1/forecast/',
 				{
 					cases: cases,
 					startDate: startDate,

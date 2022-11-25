@@ -28,8 +28,7 @@ function App() {
 
 	useEffect(() => {
 		axios
-			// .get('https://hiv-forecasting-ph-api.herokuapp.com/api/v1/forecast/')
-			.get('http://127.0.0.1:8000/api/v1/forecast/')
+			.get('https://hiv-forecasting-ph-api.herokuapp.com/api/v1/forecast/')
 			.then((response) => {
 				setData(response.data);
 				setEditedData(response.data);
