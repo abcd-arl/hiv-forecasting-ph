@@ -37,7 +37,7 @@ export default function ControlledPopup() {
 						</li>
 						<li>Click 'Select' to select editable cells. This allows you to edit or delete all selected cells. </li>
 						<li>Double click an editable cell to edit separately.</li>
-						<li>Click 'Generate Forecast' to generate new forecast with the current table values.</li>
+						<li>Click 'Generate Forecast' to generate new forecast with the current saved values.</li>
 					</ol>{' '}
 				</div>{' '}
 			</Popup>{' '}

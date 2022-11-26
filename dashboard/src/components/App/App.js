@@ -95,7 +95,7 @@ function App() {
 								<div className="mb-4 md:flex gap-4">
 									<div className="md:w-2/4">
 										<LineChart
-											datasets={[editedData.actual, editedData.validation]}
+											datasets={[editedData.processed, editedData.validation]}
 											colors={['#1d4ed8', '#e11d48']}
 											title={'Actual Values vs Model Forecasted Values'}
 										/>

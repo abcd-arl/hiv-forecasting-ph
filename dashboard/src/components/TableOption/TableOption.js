@@ -124,7 +124,7 @@ export default function TableOption({
 			'It seems you still have unsaved changes. The saved values will be used for generating the forecast. Do you still want to continue?';
 		if (!table.isSaved && !window.confirm(message)) return;
 		setIsLoadingCharts(true);
-		const cases = table.finalValues.map((value) => parseInt(value));
+		const cases = table.finalValues.map((value) => (value === 'NaN' ? null : parseInt(value)));
 
 		axios
 			.post(
@@ -154,8 +154,8 @@ export default function TableOption({
 			'It seems you have unsaved changes. The saved values will be used for generating the forecast. Do you still want to continue?';
 		if (!table.isSaved && !window.confirm(message)) return;
 		setIsLoadingCharts(true);
-		const cases = table.finalValues.map((value) => parseInt(value));
-		console.log(inputDateRef.current.value);
+		const cases = table.finalValues.map((value) => (value === 'NaN' ? null : parseInt(value)));
+
 		axios
 			.post(
 				'https://hiv-forecasting-ph-api.herokuapp.com/api/v1/update-table/',
