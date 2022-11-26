@@ -90,10 +90,10 @@ export default function Cell({
 		return (
 			<div className="hidden group-hover:flex flex-col gap-0.5 absolute top-[-.6rem] right-[-.55rem] z-50">
 				<button className="w-4 p-0.5 bg-slate-300 border border-slate-400 rounded-full" onClick={handleDataOnDelete}>
-					<img className="w-full" src={deleteIcon} />
+					<img className="w-full" src={deleteIcon} alt="Delete" />
 				</button>
 				<button className="w-4 p-0.5 bg-slate-300 border border-slate-400 rounded-full" onClick={handleDataOnEdit}>
-					<img className="w-full" src={editIcon} />
+					<img className="w-full" src={editIcon} alt="Edit" />
 				</button>
 			</div>
 		);

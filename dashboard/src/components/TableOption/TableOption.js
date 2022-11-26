@@ -99,7 +99,7 @@ export default function TableOption({
 	function handleOnAdd(e) {
 		try {
 			const numOfCellsToAdd = parseInt(inputNumRef.current.value);
-			if (!isValid(numOfCellsToAdd)) throw 'Please enter a positive integer number.';
+			if (!isValid(numOfCellsToAdd)) throw new Error('Please enter a positive integer number.');
 			dispatch({ type: 'add', numOfCellsToAdd: numOfCellsToAdd });
 		} catch (error) {
 			displayAlert('danger', error);
