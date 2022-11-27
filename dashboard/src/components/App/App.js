@@ -28,7 +28,7 @@ function App() {
 
 	useEffect(() => {
 		axios
-			.get('https://hiv-forecasting-ph-api.herokuapp.com/api/v1/forecast/')
+			.get('http://35.93.57.77:8000/api/v1/forecast/')
 			.then((response) => {
 				setData(response.data);
 				setEditedData(response.data);
@@ -44,7 +44,7 @@ function App() {
 		if (window.confirm('You are about to logout as admin. Continue?')) {
 			axios
 				.post(
-					'https://hiv-forecasting-ph-api.herokuapp.com/api/dj-rest-auth/logout/',
+					'http://35.93.57.77:8000/api/dj-rest-auth/logout/',
 					{},
 					{
 						headers: {

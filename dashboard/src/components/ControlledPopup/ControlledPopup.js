@@ -21,7 +21,7 @@ export default function ControlledPopup() {
 				{' '}
 				<div className="modal">
 					{' '}
-					<a className="close" onClick={closeModal} href="#/">
+					<a className="close" onClick={closeModal}>
 						{' '}
 						<div>&times;</div>{' '}
 					</a>{' '}

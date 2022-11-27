@@ -22,7 +22,7 @@ export default function LoginForm({ cookies, setCookie }) {
 					onSubmit={(values) => {
 						setIsLoggingIn(true);
 						axios
-							.post('https://hiv-forecasting-ph-api.herokuapp.com/api/dj-rest-auth/login/', values)
+							.post('http://35.93.57.77:8000/api/dj-rest-auth/login/', values)
 							.then((response) => {
 								console.log('here');
 								setIsLoggingIn(false);

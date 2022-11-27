@@ -49,9 +49,11 @@ export default function TableOption({
 				<span className="flex items-center">more cell(s)</span>
 			</div>
 			<div>
-				<div className="inline-block">
-					<ControlledPopup />
-				</div>
+				{isAdmin && (
+					<div className="inline-block">
+						<ControlledPopup />
+					</div>
+				)}
 
 				<button
 					className="px-2 py-1.5 mr-1.5 bg-slate-500 disabled:bg-slate-200 rounded font-bold text-white"
@@ -99,7 +101,7 @@ export default function TableOption({
 	function handleOnAdd(e) {
 		try {
 			const numOfCellsToAdd = parseInt(inputNumRef.current.value);
-			if (!isValid(numOfCellsToAdd)) throw new Error('Please enter a positive integer number.');
+			if (!(!isNaN(numOfCellsToAdd) && numOfCellsToAdd > 0)) throw new Error('Please enter a positive integer number.');
 			dispatch({ type: 'add', numOfCellsToAdd: numOfCellsToAdd });
 		} catch (error) {
 			displayAlert('danger', error);
@@ -128,7 +130,7 @@ export default function TableOption({
 
 		axios
 			.post(
-				'https://hiv-forecasting-ph-api.herokuapp.com/api/v1/forecast/',
+				'http://35.93.57.77:8000/api/v1/forecast/',
 				{
 					cases: cases,
 					startDate: startDate,
@@ -158,7 +160,7 @@ export default function TableOption({
 
 		axios
 			.post(
-				'https://hiv-forecasting-ph-api.herokuapp.com/api/v1/update-table/',
+				'http://35.93.57.77:8000/api/v1/update-table/',
 				{
 					cases: cases,
 					startDate: inputDateRef.current.value,
