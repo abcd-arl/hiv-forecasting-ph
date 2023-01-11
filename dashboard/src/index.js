@@ -1,17 +1,23 @@
+import './index.css';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
 import App from './components/App/App';
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter } from 'react-router-dom';
 import { CookiesProvider } from 'react-cookie';
+import { MantineProvider } from '@mantine/core';
+import { NotificationsProvider } from '@mantine/notifications';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
 	<React.StrictMode>
 		<BrowserRouter>
 			<CookiesProvider>
-				<App />
+				<MantineProvider withGlobalStyles withNormalizeCSS>
+					<NotificationsProvider>
+						<App />
+					</NotificationsProvider>
+				</MantineProvider>
 			</CookiesProvider>
 		</BrowserRouter>
 	</React.StrictMode>
