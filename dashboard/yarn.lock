@@ -3322,6 +3322,11 @@ chartjs-adapter-date-fns@^2.0.0:
   resolved "https://registry.yarnpkg.com/chartjs-adapter-date-fns/-/chartjs-adapter-date-fns-2.0.1.tgz#3d007d4985391362fb15c96310fff8376a434bae"
   integrity sha512-v3WV9rdnQ05ce3A0ZCjzUekJCAbfm6+3HqSoeY2BIkdMYZoYr/4T+ril1tZyDl869lz6xdNVMXejUFT9YKpw4A==
 
+chartjs-plugin-annotation@^2.1.1:
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/chartjs-plugin-annotation/-/chartjs-plugin-annotation-2.1.1.tgz#686865387d8e81130dfd81437cc4a70145df7a98"
+  integrity sha512-RVKfwNpecvVZdEUshqk9RtqjwVn9koehQBiz1ZWclgFOVayr2CSTENI6VqsyjuYtzBTFEX6Qark7SqYtnwNiAA==
+
 check-types@^11.1.1:
   version "11.2.2"
   resolved "https://registry.yarnpkg.com/check-types/-/check-types-11.2.2.tgz#7afc0b6a860d686885062f2dba888ba5710335b4"

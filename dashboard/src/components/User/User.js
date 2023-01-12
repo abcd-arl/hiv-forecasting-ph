@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import Table from '../Table/Table';
 import LineChart from '../LineChart/LineChart';
+import LineChartRanged from '../LineChartRanged/LineChartRanged';
 import BarChart from '../BarChart/BarChart';
 import Error from '../Error/Error';
 import Loading from '../Loading/Loading';
@@ -33,11 +34,12 @@ export default function User({ data, setData, defValLastIndex, setDefValLastInde
 				<div className={isLoadingCharts ? `opacity-50` : ''}>
 					<div className="mb-6 h-72 md:h-80 lg:h-96">
 						<LineChart
+							title={'Actual Values and Forecasted Values'}
 							datasets={[data.actual, data.forecast]}
 							colors={['#1d4ed8', '#1d4ed8']}
-							title={'Actual Values and Forecasted Values'}
-							maintainAspectRatio={false}
-							indexDashLine={1}
+							borderDashes={[false, [6, 5]]}
+							timeUnit={'year'}
+							isWide={true}
 						/>
 					</div>
 					<div className="relative mb-10 md:flex gap-4">
@@ -45,7 +47,7 @@ export default function User({ data, setData, defValLastIndex, setDefValLastInde
 							<BarChart datasets={[data.forecast]} colors={['#1d4ed8', '#e11d48']} title={'12-Month Forecast'} />
 						</div>
 						<div className="relative md:w-2/4">
-							<LineChart datasets={[data.actual]} colors={['#1d4ed8']} title={'Actual Values'} hasRange={true} />
+							<LineChartRanged initialTitle={'Actual Values'} dataset={data.actual} color={'#1d4ed8'} />
 						</div>
 					</div>
 				</div>

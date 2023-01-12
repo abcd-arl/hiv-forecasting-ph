@@ -8,39 +8,29 @@ import {
 	Tooltip,
 	Legend,
 } from 'chart.js';
+import annotationPlugin from 'chartjs-plugin-annotation';
 import { Line } from 'react-chartjs-2';
 import 'chartjs-adapter-date-fns';
-import { useEffect, useRef, useState } from 'react';
-import { DateRangePicker } from '@mantine/dates';
-import { IconCalendarEvent } from '@tabler/icons';
 
-ChartJS.register(TimeSeriesScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+ChartJS.register(TimeSeriesScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, annotationPlugin);
 
-export default function LineChart({ datasets, colors, title, hasRange = false, maintainAspectRatio, indexDashLine }) {
-	const [datePickerValue, setDatePickerValue] = useState(
-		datasets.length === 0 ? null : getDatePickerValue(datasets[0].startDate, datasets[0].cases.length)
-	);
-	const defaultDatePickerValue = useRef(datePickerValue);
-
-	useEffect(() => {
-		setDatePickerValue(getDatePickerValue(datasets[0].startDate, datasets[0].cases.length));
-	}, [datasets]);
-
-	let newTitle = title;
-	if (hasRange) {
-		const fromDate = datePickerValue[0] === null ? defaultDatePickerValue.current[0] : datePickerValue[0];
-		const toDate = datePickerValue[1] === null ? defaultDatePickerValue.current[1] : datePickerValue[1];
-		const dateToStr = (date) => date.toLocaleDateString('en-us', { year: 'numeric', month: 'long' });
-		newTitle = `${title} from ${dateToStr(fromDate)} to ${dateToStr(toDate)}`;
-	}
-
+export default function LineChart({
+	title,
+	datasets,
+	colors,
+	y_title = 'Number of Cases',
+	borderDashes = null,
+	isWide = false,
+	timeUnit = 'month',
+	pointRadius = 0,
+}) {
 	const options = {
-		maintainAspectRatio: maintainAspectRatio,
+		maintainAspectRatio: !isWide,
 		responsive: true,
 		plugins: {
 			title: {
 				display: true,
-				text: newTitle,
+				text: title,
 				font: {
 					size: 12,
 				},
@@ -69,12 +59,18 @@ export default function LineChart({ datasets, colors, title, hasRange = false, m
 					},
 				},
 			},
+			annotation: {
+				common: {
+					drawTime: 'beforeDraw',
+				},
+				annotations: {},
+			},
 		},
 		scales: {
 			x: {
 				title: {
 					display: true,
-					text: title === 'Residuals' || hasRange ? 'Month and Year' : 'Year',
+					text: timeUnit[0].toUpperCase() + timeUnit.slice(1),
 					font: {
 						size: 11,
 					},
@@ -82,7 +78,6 @@ export default function LineChart({ datasets, colors, title, hasRange = false, m
 				type: 'timeseries',
 				ticks: {
 					autoskip: true,
-					// maxTicksLimit: 8,
 					source: 'data',
 					bounds: 'data',
 					maxRotation: 0,
@@ -92,13 +87,13 @@ export default function LineChart({ datasets, colors, title, hasRange = false, m
 					},
 				},
 				time: {
-					unit: title === 'Residuals' || hasRange ? 'month' : 'year',
+					unit: timeUnit,
 				},
 			},
 			y: {
 				title: {
 					display: true,
-					text: title === 'Residuals' ? 'Residuals' : 'Number of Cases',
+					text: y_title,
 					font: {
 						size: 11,
 					},
@@ -116,28 +111,13 @@ export default function LineChart({ datasets, colors, title, hasRange = false, m
 
 	const data = {
 		datasets: datasets.map((dataset, idx) => {
+			console.log(dataset.cases);
 			return {
 				label: dataset.name,
 				data: (() => {
 					const cases = [];
 
-					let [start, end] = [0, dataset.cases.length];
-					if (hasRange) {
-						if (datePickerValue[0] !== null && datePickerValue[1] !== null) {
-							start = start + getMonthDifference([new Date(datasets[0].startDate), datePickerValue[0]]);
-							end = start + getMonthDifference([datePickerValue[0], datePickerValue[1]]) + 1;
-						} else if (datePickerValue[0] === null && datePickerValue[1] !== null) {
-							end = start + getMonthDifference([datePickerValue[0], datePickerValue[1]]) + 1;
-						} else if (datePickerValue[1] === null && datePickerValue[0] !== null) {
-							start = start + getMonthDifference([new Date(datasets[0].startDate), datePickerValue[0]]);
-						} else {
-							start = start + getMonthDifference([new Date(datasets[0].startDate), defaultDatePickerValue.current[0]]);
-							end =
-								start + getMonthDifference([defaultDatePickerValue.current[0], defaultDatePickerValue.current[1]]) + 1;
-						}
-					}
-
-					for (let i = start; i < end; i++) {
+					for (let i = 0; i < dataset.cases.length; i++) {
 						cases.push({
 							x: new Date(dataset.startDate[0], dataset.startDate[1] + i, 0),
 							y: dataset.cases[i],
@@ -149,9 +129,9 @@ export default function LineChart({ datasets, colors, title, hasRange = false, m
 				borderColor: colors[idx],
 				borderWidth: 1,
 				tension: 0.2,
-				pointRadius: hasRange ? 2 : 0,
+				pointRadius: pointRadius,
 				showTooltips: false,
-				borderDash: indexDashLine === idx ? [8, 5] : [0, 0],
+				// borderDash: [0, 0],
 			};
 		}),
 	};
@@ -159,46 +139,7 @@ export default function LineChart({ datasets, colors, title, hasRange = false, m
 	return (
 		<>
 			<Line data={data} options={options}></Line>
-			{hasRange && (
-				<>
-					<DateRangePicker
-						size="xs"
-						icon={<IconCalendarEvent size={18} />}
-						maxDate={new Date(datasets[0].startDate[0], datasets[0].startDate[1] + datasets[0].cases.length - 1, 1)}
-						minDate={new Date(datasets[0].startDate[0], datasets[0].startDate[1] - 1, 1)}
-						excludeDate={(date) => date.getDate() !== 1}
-						placeholder="Pick dates range"
-						defaultValue={datePickerValue}
-						value={datePickerValue}
-						onChange={setDatePickerValue}
-						className="w-[47.5%] min-w-[300px]"
-						description={'The days in the dates are being disregarded.'}
-					/>
-				</>
-			)}
 			<div className="invisible">to make responsive</div>
 		</>
 	);
-
-	function getMonthDifference([startDate, endDate]) {
-		return endDate.getMonth() - startDate.getMonth() + 12 * (endDate.getFullYear() - startDate.getFullYear());
-	}
-
-	function getDatePickerValue(datasetStartDate, casesLen) {
-		const startYear = datasetStartDate[0];
-		const startMonth = datasetStartDate[1];
-		const casesLastIndex = casesLen - 1;
-		const rangeMonths = 11;
-
-		const startDate = new Date(
-			startYear,
-			startMonth + (rangeMonths < casesLastIndex ? casesLastIndex - rangeMonths : casesLastIndex),
-			0
-		);
-
-		const endDate = new Date(startYear, startMonth + casesLastIndex, 0);
-		startDate.setDate(1);
-		endDate.setDate(1);
-		return [startDate, endDate];
-	}
 }
