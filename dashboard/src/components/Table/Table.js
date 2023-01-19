@@ -1,7 +1,7 @@
 import { useState, useEffect, useReducer, useRef } from 'react';
 import { notify } from '../Notify/Notify';
 import TableOption from '../TableOption/TableOption';
-import TableSettings from '../TableSettings/TableSettings';
+import Settings from '../Settings/Settings';
 import Cell from '../Cell/Cell';
 
 const isValid = (value) => value === 'NaN' || (!isNaN(value) && value > 0);
@@ -199,6 +199,7 @@ const reducer = (state, action) => {
 
 export default function Table({
 	dataset,
+	skips,
 	setData,
 	tableRef,
 	defValLastIndex,
@@ -223,22 +224,22 @@ export default function Table({
 	const [isBeingHovered, setIsBeingHovered] = useState(false);
 	const isFirstRun = useRef(true);
 
-	useEffect(() => {
-		console.group('Table Values');
-		console.log('dataset', dataset);
-		console.log('cookies', cookies);
-		console.log('history', table.history);
-		console.log('startDate', table.startDate);
-		console.log('found errors', table.foundErrors);
-		console.log('initial table values:', table.values);
-		console.log('initial table status:', table.activity.status, table.activity.startIndex);
-		console.log('final table values:', table.finalValues);
-		console.log('final table is recent:', table.isSaved);
-		console.log('is saivng', table.isSaving);
-		console.log('def val last index', defValLastIndex);
-		console.log('last def value', table.values[defValLastIndex]);
-		console.groupEnd();
-	});
+	// useEffect(() => {
+	// 	console.group('Table Values');
+	// 	console.log('dataset', dataset);
+	// 	console.log('cookies', cookies);
+	// 	console.log('history', table.history);
+	// 	console.log('startDate', table.startDate);
+	// 	console.log('found errors', table.foundErrors);
+	// 	console.log('initial table values:', table.values);
+	// 	console.log('initial table status:', table.activity.status, table.activity.startIndex);
+	// 	console.log('final table values:', table.finalValues);
+	// 	console.log('final table is recent:', table.isSaved);
+	// 	console.log('is saivng', table.isSaving);
+	// 	console.log('def val last index', defValLastIndex);
+	// 	console.log('last def value', table.values[defValLastIndex]);
+	// 	console.groupEnd();
+	// });
 
 	useEffect(() => {
 		if (tableRef.current !== null) dispatch({ type: 'restore', data: tableRef.current });
@@ -366,6 +367,7 @@ export default function Table({
 		<div className="w-[100%]">
 			<TableOption
 				table={table}
+				skips={skips}
 				dispatch={dispatch}
 				defValLastIndex={defValLastIndex}
 				setDefValLastIndex={setDefValLastIndex}
@@ -391,7 +393,7 @@ export default function Table({
 					<tbody className="w-full overflow-scroll">{tableRows}</tbody>
 				</table>
 			</div>
-			<TableSettings />
+			{/* <Settings dataset={dataset} skipsData={skips} /> */}
 		</div>
 	);
 }
