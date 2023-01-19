@@ -7,6 +7,7 @@ import { Button, Divider, Input } from '@mantine/core';
 
 export default function TableOption({
 	table,
+	skips,
 	dispatch,
 	defValLastIndex,
 	setDefValLastIndex,
@@ -102,8 +103,7 @@ export default function TableOption({
 					<Button
 						size="xs"
 						variant="gradient"
-						gradient={{ from: 'indigo', to: 'cyan' }}
-						className="hover:-translate-y-0.5 transform transition"
+						gradient={{ from: '#ed6ea0', to: '#ec8c69', deg: 35 }}
 						onClick={handleOnGenerateForecast}
 					>
 						Generate Forecast
@@ -160,7 +160,7 @@ export default function TableOption({
 		axios
 			.post(
 				// 'http://35.93.57.77:8000/api/v1/forecast/',
-				'http://127.0.0.1:8000/api/v1/forecast/',
+				'http://35.89.128.109:8000/api/v1/forecast/',
 				{
 					cases: cases,
 					startDate: startDate,
@@ -192,10 +192,11 @@ export default function TableOption({
 		axios
 			.post(
 				// 'http://35.93.57.77:8000/api/v1/update-table/',
-				'http://127.0.0.1:8000/api/v1/update-table/',
+				'http://35.89.128.109:8000/api/v1/update-table/',
 				{
 					cases: cases,
 					startDate: inputDateRef.current.value,
+					// skips: skips,
 				},
 				{
 					headers: {
@@ -213,7 +214,7 @@ export default function TableOption({
 			.catch((error) => {
 				setIsLoadingCharts(false);
 				setIsLoadingTable(false);
-				notify('danger', 'An error occured while updating the table.');
+				notify('error', 'An error occured while updating the table.');
 			});
 	}
 }

@@ -1,6 +1,6 @@
 import { IconUpload } from '@tabler/icons';
 import { Popover, Button, FileInput, Flex, Checkbox, Modal } from '@mantine/core';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { notify } from '../Notify/Notify';
 import instruction_img_1 from './instruction-1.png';
 import instruction_img_2 from './instruction-2.png';
@@ -31,11 +31,12 @@ export default function UploadFile({ dispatch, disabled, isAdmin, setIsLoadingTa
 					<li className="mb-1">Invalid values will be converted as NaN values.</li>
 					<li className="mb-1">
 						<span>
-							If "Append to the table" is unchecked, make sure the file also contains "Date" as header. Note that only{' '}
+							If "Append to the table" is unchecked, make sure the file also contains "Date" as header. Note that only
+							the{' '}
 							<a href="https://tc39.es/ecma262/#sec-date-time-string-format" target="blank">
 								ISO 180 format
 							</a>{' '}
-							(YYYY-MM-DDTHH:mm:ss.sssZ) is supported.
+							is supported.
 						</span>
 						<img src={instruction_img_2} />
 					</li>
@@ -135,10 +136,10 @@ export default function UploadFile({ dispatch, disabled, isAdmin, setIsLoadingTa
 			reader.onload = function (event) {
 				const csvContents = event.target.result;
 				const headers = csvContents.slice(0, csvContents.indexOf('\r')).split(',');
-				const numberOfNewCasesIndex = headers.indexOf('Number of New Cases');
+				const numberOfNewCasesIndex = headers.indexOf('No. of New HIV Cases');
 				const dateIndex = headers.indexOf('Date');
 
-				if (numberOfNewCasesIndex < 0) return reject('Missing "Number of New Cases" in header.');
+				if (numberOfNewCasesIndex < 0) return reject('Missing "No. of New HIV Cases" in header.');
 				if (!isToAppendChecked && dateIndex < 0) return reject('Missing "Date" in header.');
 
 				const rows = csvContents.slice(csvContents.indexOf('\n') + 1).split('\r\n');

@@ -104,8 +104,8 @@ function App() {
 		if (window.confirm('You are about to logout as admin. Continue?')) {
 			axios
 				.post(
-					// 'http://35.93.57.77:8000/api/dj-rest-auth/logout/',
-					'http://127.0.0.1:8000/api/dj-rest-auth/logout/',
+					// 'http://127.0.0.1:8000/api/dj-rest-auth/logout/',
+					'http://35.89.128.109:8000/api/dj-rest-auth/logout/',
 					{},
 					{
 						headers: {
