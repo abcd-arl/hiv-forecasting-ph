@@ -1,11 +1,13 @@
 import { useRef, useState } from 'react';
 import axios from 'axios';
-import ControlledPopup from '../ControlledPopup/ControlledPopup';
-
-const isValid = (value) => value === 'NaN' || (!isNaN(value) && value > 0);
+import UploadFile from '../UploadFile/UploadFile';
+import TableInstruction from '../TableInstruction/TableInstruction';
+import { notify } from '../Notify/Notify';
+import { Button, Divider, Input } from '@mantine/core';
 
 export default function TableOption({
 	table,
+	skips,
 	dispatch,
 	defValLastIndex,
 	setDefValLastIndex,
@@ -14,7 +16,7 @@ export default function TableOption({
 	isAdmin,
 	startDate,
 	setIsLoadingCharts,
-	displayAlert,
+	setIsLoadingTable,
 }) {
 	const inputNumRef = useRef(null);
 	const inputDateRef = useRef(null);
@@ -26,10 +28,13 @@ export default function TableOption({
 		}`;
 
 	return (
-		<div className="w-[98%] mx-auto mb-2 flex justify-between text-xs">
-			<div className="flex">
-				<button
-					className="px-2 py-1.5 mr-1.5 bg-slate-500 disabled:bg-slate-200 rounded font-bold text-white"
+		<div className="w-[98%] m-auto mb-2 flex justify-between text-xs overflow-y-clip overflow-x-auto">
+			<div className="flex gap-1">
+				<Button
+					size="xs"
+					className={`px-2   rounded ${
+						table.activity.status === 'selecting' ? 'bg-red-400 hover:bg-red-400' : 'bg-slate-500 hover:bg-slate-500'
+					}`}
 					disabled={
 						(!isAdmin && defValLastIndex === table.values.length - 1) ||
 						['editing', 'saving'].includes(table.activity.status)
@@ -37,55 +42,72 @@ export default function TableOption({
 					onClick={handleOnSelect}
 				>
 					{table.activity.status === 'selecting' ? 'Cancel' : 'Select'}
-				</button>
-				<button
-					className="px-2 py-1.5 mr-1.5 bg-slate-500 disabled:bg-slate-200 rounded font-bold text-white"
+				</Button>
+				<Divider orientation="vertical" className="mx-1" />
+				<UploadFile
+					dispatch={dispatch}
+					isAdmin={isAdmin}
+					isToAppend={true}
+					setIsLoadingTable={setIsLoadingTable}
+					disabled={table.activity.status === 'editing'}
+					inputDateRef={inputDateRef}
+				/>
+				<span className="mx-1 flex items-center">or</span>
+				<Button
+					size="xs"
+					className="px-2 bg-slate-500 hover:bg-slate-500 disabled:bg-slate-200 rounded font-bold text-white"
 					onClick={handleOnAdd}
 					disabled={table.activity.status === 'editing'}
 				>
 					Add
-				</button>
-				<input className="w-9 mr-1.5 px-2 border border-slate-300 " ref={inputNumRef} type="text" defaultValue={1} />
+				</Button>
+				<Input
+					size="xs"
+					className="w-10"
+					ref={inputNumRef}
+					type="text"
+					defaultValue={1}
+					onKeyDown={handleOnEnterNumber}
+				/>
 				<span className="flex items-center">more cell(s)</span>
 			</div>
-			<div>
-				{isAdmin && (
-					<div className="inline-block">
-						<ControlledPopup />
-					</div>
-				)}
-
-				<button
-					className="px-2 py-1.5 mr-1.5 bg-slate-500 disabled:bg-slate-200 rounded font-bold text-white"
+			<div className="flex gap-1.5">
+				<TableInstruction />
+				<Button
+					size="xs"
+					className="px-2 bg-slate-500 hover:bg-slate-500 disabled:bg-slate-200 rounded font-bold text-white"
 					disabled={table.isSaved}
 					onClick={handleOnSave}
 				>
 					Save
-				</button>
+				</Button>
 				{isAdmin ? (
 					<>
 						<input
-							className="p-[.30rem] border border-slate-400 mr-1.5"
+							className="p-[.50rem] border border-solid border-gray-300 rounded-md"
 							ref={inputDateRef}
 							type="date"
 							defaultValue={toDateStrFormat(startDate)}
 							onChange={handleOnChangeInputDate}
 						/>
-						<button
-							className="px-2 py-1.5 bg-slate-500 rounded font-bold text-white disabled:bg-slate-200"
-							onClick={handleOnUpdateTable}
+						<Button
+							size="xs"
+							className="px-2 bg-slate-500 hover:bg-slate-500 disabled:bg-slate-200 rounded font-bold text-white"
 							disabled={isInputDateEmpty}
+							onClick={handleOnUpdateTable}
 						>
 							Update Table
-						</button>
+						</Button>
 					</>
 				) : (
-					<button
-						className="px-2 py-1.5 bg-red-400 rounded font-bold text-white hover:bg-red-500 hover:-translate-y-0.5 transform transition"
+					<Button
+						size="xs"
+						variant="gradient"
+						gradient={{ from: '#ed6ea0', to: '#ec8c69', deg: 35 }}
 						onClick={handleOnGenerateForecast}
 					>
 						Generate Forecast
-					</button>
+					</Button>
 				)}
 			</div>
 		</div>
@@ -104,7 +126,14 @@ export default function TableOption({
 			if (!(!isNaN(numOfCellsToAdd) && numOfCellsToAdd > 0)) throw new Error('Please enter a positive integer number.');
 			dispatch({ type: 'add', numOfCellsToAdd: numOfCellsToAdd });
 		} catch (error) {
-			displayAlert('danger', error);
+			notify('error', error.message);
+		}
+	}
+
+	function handleOnEnterNumber(e) {
+		if (e.keyCode === 13) {
+			if (table.activity.status !== 'editing') handleOnAdd();
+			else notify('warning', 'Please finish editing first.');
 		}
 	}
 
@@ -130,7 +159,8 @@ export default function TableOption({
 
 		axios
 			.post(
-				'http://35.93.57.77:8000/api/v1/forecast/',
+				// 'http://35.93.57.77:8000/api/v1/forecast/',
+				'http://35.89.128.109:8000/api/v1/forecast/',
 				{
 					cases: cases,
 					startDate: startDate,
@@ -147,7 +177,7 @@ export default function TableOption({
 			.catch((error) => {
 				setIsLoadingCharts(false);
 				console.log(error.message);
-				displayAlert('danger', 'An error occured while generating the forecast.');
+				notify('error', 'An error occured while generating the forecast.');
 			});
 	}
 
@@ -156,14 +186,17 @@ export default function TableOption({
 			'It seems you have unsaved changes. The saved values will be used for generating the forecast. Do you still want to continue?';
 		if (!table.isSaved && !window.confirm(message)) return;
 		setIsLoadingCharts(true);
+		setIsLoadingTable(true);
 		const cases = table.finalValues.map((value) => (value === 'NaN' ? null : parseInt(value)));
 
 		axios
 			.post(
-				'http://35.93.57.77:8000/api/v1/update-table/',
+				// 'http://35.93.57.77:8000/api/v1/update-table/',
+				'http://35.89.128.109:8000/api/v1/update-table/',
 				{
 					cases: cases,
 					startDate: inputDateRef.current.value,
+					// skips: skips,
 				},
 				{
 					headers: {
@@ -173,15 +206,15 @@ export default function TableOption({
 			)
 			.then((response) => {
 				setIsLoadingCharts(false);
-				console.log('success', response);
-				displayAlert('success', 'The table has been successfuly updated.');
+				setIsLoadingTable(false);
 				setData(response.data);
 				setDefValLastIndex(response.data.actual.cases.length - 1);
+				notify('success', 'The table has been updated.');
 			})
 			.catch((error) => {
 				setIsLoadingCharts(false);
-				console.log(error.message);
-				displayAlert('danger', 'An error occured while updating the table.');
+				setIsLoadingTable(false);
+				notify('error', 'An error occured while updating the table.');
 			});
 	}
 }

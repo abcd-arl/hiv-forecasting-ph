@@ -1,8 +1,9 @@
 import { useState, useEffect, useReducer, useRef } from 'react';
 import { notify } from '../Notify/Notify';
 import TableOption from '../TableOption/TableOption';
-import Settings from '../Settings/Settings';
+import TableSettings from '../TableSettings/TableSettings';
 import Cell from '../Cell/Cell';
+import { isFriday } from 'date-fns';
 
 const isValid = (value) => value === 'NaN' || (!isNaN(value) && value > 0);
 const isEmpty = (obj) => Object.keys(obj).length === 0;
@@ -199,15 +200,16 @@ const reducer = (state, action) => {
 
 export default function Table({
 	dataset,
-	skips,
 	setData,
-	tableRef,
+	dataAdmin,
+	dataUser,
 	defValLastIndex,
 	setDefValLastIndex,
 	setIsLoadingCharts,
 	setIsLoadingTable,
-	cookies,
 	isAdmin,
+	cookies,
+	updateTableAsAdmin,
 }) {
 	const [table, dispatch] = useReducer(reducer, {
 		values: [],
@@ -224,26 +226,35 @@ export default function Table({
 	const [isBeingHovered, setIsBeingHovered] = useState(false);
 	const isFirstRun = useRef(true);
 
-	// useEffect(() => {
-	// 	console.group('Table Values');
-	// 	console.log('dataset', dataset);
-	// 	console.log('cookies', cookies);
-	// 	console.log('history', table.history);
-	// 	console.log('startDate', table.startDate);
-	// 	console.log('found errors', table.foundErrors);
-	// 	console.log('initial table values:', table.values);
-	// 	console.log('initial table status:', table.activity.status, table.activity.startIndex);
-	// 	console.log('final table values:', table.finalValues);
-	// 	console.log('final table is recent:', table.isSaved);
-	// 	console.log('is saivng', table.isSaving);
-	// 	console.log('def val last index', defValLastIndex);
-	// 	console.log('last def value', table.values[defValLastIndex]);
-	// 	console.groupEnd();
-	// });
+	useEffect(() => {
+		console.group('Table Values');
+		// console.log('dataset', dataset);
+		// console.log('cookies', cookies);
+		// console.log('history', table.history);
+		// console.log('startDate', table.startDate);
+		// console.log('found errors', table.foundErrors);
+		// console.log('initial table values:', table.values);
+		// console.log('initial table status:', table.activity.status, table.activity.startIndex);
+		// console.log('final table values:', table.finalValues);
+		// console.log('final table is recent:', table.isSaved);
+		// console.log('is saivng', table.isSaving);
+		// console.log('def val last index', defValLastIndex);
+		// console.log('last def value', table.values[defValLastIndex]);
+		if (isAdmin) console.log('dataAdmin', dataAdmin.current);
+		else console.log('dataUser', dataUser.current);
+		console.log('isFirstRun', isFirstRun);
+
+		console.groupEnd();
+	});
 
 	useEffect(() => {
-		if (tableRef.current !== null) dispatch({ type: 'restore', data: tableRef.current });
-		else dispatch({ type: 'initialize', dataset: dataset });
+		if (isAdmin && dataAdmin.current !== null) {
+			dispatch({ type: 'restore', data: dataAdmin.current });
+		} else if (!isAdmin && dataUser.current !== null) {
+			dispatch({ type: 'restore', data: dataUser.current });
+		} else {
+			dispatch({ type: 'initialize', dataset: dataset });
+		}
 	}, []);
 
 	useEffect(() => {
@@ -260,8 +271,12 @@ export default function Table({
 				break;
 		}
 
-		if (!isFirstRun.current) tableRef.current = table;
-		else isFirstRun.current = false;
+		if (!isFirstRun.current) {
+			if (isAdmin) dataAdmin.current = table;
+			else dataUser.current = table;
+		} else {
+			isFirstRun.current = false;
+		}
 	}, [table]);
 
 	function handleEmptyCellOnMouseOver(e) {
@@ -367,13 +382,13 @@ export default function Table({
 		<div className="w-[100%]">
 			<TableOption
 				table={table}
-				skips={skips}
 				dispatch={dispatch}
 				defValLastIndex={defValLastIndex}
 				setDefValLastIndex={setDefValLastIndex}
 				setData={setData}
 				cookies={cookies}
 				isAdmin={isAdmin}
+				updateTableAsAdmin={updateTableAsAdmin}
 				startDate={dataset.startDate}
 				setIsLoadingCharts={setIsLoadingCharts}
 				setIsLoadingTable={setIsLoadingTable}
@@ -393,7 +408,7 @@ export default function Table({
 					<tbody className="w-full overflow-scroll">{tableRows}</tbody>
 				</table>
 			</div>
-			{/* <Settings dataset={dataset} skipsData={skips} /> */}
+			<TableSettings />
 		</div>
 	);
 }

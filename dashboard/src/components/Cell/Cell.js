@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import deleteIcon from './icon-close.svg';
-import editIcon from './icon-edit.svg';
+import { notify } from '../Notify/Notify';
+import { ActionIcon } from '@mantine/core';
+import { IconEdit, IconTrash } from '@tabler/icons';
 
 export default function Cell({
 	dispatch,
@@ -11,7 +12,6 @@ export default function Cell({
 	isStartingCell,
 	hasError,
 	setIsBeingHovered,
-	displayAlert,
 }) {
 	const [cell, setCell] = useState({ value: initialValue, isToUpdate: false });
 	const [isEditing, setIsEditing] = useState(cellStatus === 'editing');
@@ -19,14 +19,19 @@ export default function Cell({
 	const inputRef = useRef(null);
 
 	useEffect(() => {
-		if (cellStatus !== 'index' && cellStatus !== 'default' && cellStatus !== 'initialized') {
-			console.group('cell', index);
-			console.log('initial value', initialValue);
-			console.log('cell value', cell.value);
-			console.log('cell status', cellStatus);
-			console.log('table status', tableStatus);
-			console.log('isEditing', isEditing);
-			console.groupEnd();
+		// if (cellStatus !== 'index' && cellStatus !== 'default' && cellStatus !== 'initialized') {
+		// 	console.group('cell', index);
+		// 	console.log('initial value', initialValue);
+		// 	console.log('cell value', cell.value);
+		// 	console.log('cell status', cellStatus);
+		// 	console.log('table status', tableStatus);
+		// 	console.log('isEditing', isEditing);
+		// 	console.groupEnd();
+		// }
+
+		if (cellStatus === 'replaced') {
+			cell.value = initialValue;
+			dispatch({ type: 'update', index: index, value: isNaN(initialValue) ? 'NaN' : initialValue });
 		}
 
 		if (cellStatus === 'editing' && tableStatus === 'editing' && !isEditing) setIsEditing(true);
@@ -64,12 +69,12 @@ export default function Cell({
 
 	function handleDataOnDoubleClick(e) {
 		if (cellStatus === 'default') {
-			displayAlert('warning', 'Cannot edit default values.');
+			notify('warning', 'Original values cannot be edited.');
 			return;
 		}
 
 		if (tableStatus === 'editing') {
-			displayAlert('warning', 'Please finish editing first.');
+			notify('warning', 'Please finish editing first.');
 			return;
 		}
 
@@ -88,22 +93,34 @@ export default function Cell({
 
 	const cellOptions = (function () {
 		return (
-			<div className="hidden group-hover:flex flex-col gap-0.5 absolute top-[-.6rem] right-[-.55rem] z-50">
-				<button className="w-4 p-0.5 bg-slate-300 border border-slate-400 rounded-full" onClick={handleDataOnDelete}>
-					<img className="w-full" src={deleteIcon} alt="Delete" />
-				</button>
-				<button className="w-4 p-0.5 bg-slate-300 border border-slate-400 rounded-full" onClick={handleDataOnEdit}>
-					<img className="w-full" src={editIcon} alt="Edit" />
-				</button>
+			<div className="hidden group-hover:flex flex-col gap-0.5 absolute top-[-.65rem] right-[-.7rem] z-50">
+				<ActionIcon
+					size="xs"
+					radius="lg"
+					color="gray.9"
+					className="bg-slate-300 hover:bg-slate-300 border border-solid border-slate-400"
+					onClick={handleDataOnDelete}
+				>
+					<IconTrash size={18} />
+				</ActionIcon>
+				<ActionIcon
+					size="xs"
+					radius="lg"
+					color="gray.9"
+					className="bg-slate-300 hover:bg-slate-300 border border-solid border-slate-400"
+					onClick={handleDataOnEdit}
+				>
+					<IconEdit size={18} />
+				</ActionIcon>
 			</div>
 		);
 	})();
 
 	if (isEditing) {
 		return (
-			<td className="border border-slate-300">
+			<td className="border border-slate-300 border-solid">
 				<input
-					className="w-[95%] h-[1.7rem] m-auto block text-center border-b-2 border-blue-500 focus:border-none"
+					className="w-[85%] focus:w-[100%] h-[1.8rem] m-auto flex items-center text-center border-0 border-b-2 border-blue-500 focus:border-none"
 					ref={inputRef}
 					placeholder="NaN"
 					defaultValue={cell.value}
@@ -117,7 +134,7 @@ export default function Cell({
 
 	return (
 		<td
-			className={`border border-slate-300 ${
+			className={`border border-slate-300 border-solid ${
 				cellStatus === 'default'
 					? 'bg-slate-50'
 					: `${
@@ -132,7 +149,7 @@ export default function Cell({
 		>
 			<div
 				className={`${cellStatus === 'index' ? '' : 'cell'}, ${
-					hasError ? 'text-red-500' : ''
+					hasError ? 'text-red-500 font-bold' : ''
 				} text-xs text-center relative`}
 			>
 				{cell.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
