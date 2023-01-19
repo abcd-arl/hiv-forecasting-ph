@@ -52,7 +52,7 @@ export default function Admin({
 	return (
 		<div className="relative w-full h-fit">
 			{isLoadingCharts && <Loading />}
-			<div className={`mb-10 ${isLoadingCharts ? `opacity-50` : ''}`}>
+			{/* <div className={`mb-10 ${isLoadingCharts ? `opacity-50` : ''}`}>
 				<div className="mb-6 h-72 md:h-80 lg:h-96">
 					<LineChart
 						title={'Actual Values and Forecasted Values'}
@@ -63,8 +63,8 @@ export default function Admin({
 						timeUnit={'year'}
 						isWide={true}
 					/>
-				</div>
-				{/* <div className="md:flex gap-8">
+				</div> */}
+			{/* <div className="md:flex gap-8">
 					<div className="md:w-2/4">
 						<BarChart
 							datasets={[data.forecast, data.forecast]}
@@ -76,7 +76,7 @@ export default function Admin({
 						<LineChart datasets={[data.residuals]} colors={['#e11d48']} title={'Residuals'} />
 					</div>
 				</div> */}
-			</div>
+			{/* </div> */}
 			<div className={isLoadingTable ? `opacity-50 pointer-events-none` : ''}>
 				{isLoadingTable && <Loading />}
 				<Table
