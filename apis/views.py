@@ -119,8 +119,8 @@ def generate_forecast(series, skips=None):
         initial_model = sm.tsa.SARIMAX(train, order=(0,0,2), seasonal_order=(2,0,3,6)).fit()
     except: 
         initial_model = sm.tsa.SARIMAX(train, order=(0,0,2), seasonal_order=(2,0,3,6), enforce_stationarity=False).fit()
-    # final_model = perform_grid_search_sarima(series_analysis)
-    final_model = sm.tsa.SARIMAX(series_analysis, order=(0,0,2), seasonal_order=(2,0,3,6), enforce_stationarity=False).fit()
+    final_model = perform_grid_search_sarima(series_analysis)
+    # final_model = sm.tsa.SARIMAX(series_analysis, order=(0,0,2), seasonal_order=(2,0,3,6), enforce_stationarity=False).fit()
     # final_model = auto_arima(series_analysis)
     # predict
     predict = final_model.predict()
