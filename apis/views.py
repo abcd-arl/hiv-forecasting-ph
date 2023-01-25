@@ -7,11 +7,12 @@ from django.core.files import File
 import s3fs
 import boto3
 from io import StringIO 
-
+import math
 import datetime
 import pandas as pd
 import numpy as np
 import statsmodels.api as sm
+from pmdarima.arima import auto_arima
 from sklearn.metrics import mean_absolute_error, mean_squared_error, mean_absolute_percentage_error
 
 from .models import Case
@@ -52,6 +53,42 @@ def remove_uwnanted_cases(series, start_date, skips):
     
     return skip_indices, wanted_series, index_to_start, index_to_end
 
+def perform_grid_search_sarima(series_values):
+    train, test = series_values[:len(series_values) - 12], series_values[len(series_values) - 12:]
+    least_RMSE = 100000
+    combination = ()
+    best_model = ''
+    actual = test
+    for p in range(0,4):
+        for q in range(0,4):
+            for P in range(0,4):
+                for Q in range(0,4):
+                    for lag in [3,6,12]:
+                        d = 0
+                        D = 0
+                        
+                        try:
+                            mod_sarimax = sm.tsa.SARIMAX(train, order=(p,d,q), seasonal_order=(P,D,Q,lag))
+                            model = mod_sarimax.fit()
+                            predicted = model.forecast(12)
+                            MSE = np.square(np.subtract(actual, predicted)).mean()
+                            RMSE = math.sqrt(MSE)
+                            print(p,q,P,Q,lag,RMSE)
+
+                            if RMSE < least_RMSE:
+                                least_RMSE = RMSE
+                                combination = ((p,d,q),(P,D,Q,lag))
+                                best_model = model
+
+                        except:
+                            pass
+    print("Combination with Least RMSE ")
+    print(combination)
+    print("RMSE value: "+ str(least_RMSE))
+    model = sm.tsa.SARIMAX(series_values, order=combination[0], seasonal_order=combination[1], enforce_stationarity=False).fit()
+    model.save('static/model.pkl')
+    return model
+
 
 def generate_forecast(series, skips=None):
     series_raw = series.copy()
@@ -82,8 +119,9 @@ def generate_forecast(series, skips=None):
         initial_model = sm.tsa.SARIMAX(train, order=(0,0,2), seasonal_order=(2,0,3,6)).fit()
     except: 
         initial_model = sm.tsa.SARIMAX(train, order=(0,0,2), seasonal_order=(2,0,3,6), enforce_stationarity=False).fit()
+    # final_model = perform_grid_search_sarima(series_analysis)
     final_model = sm.tsa.SARIMAX(series_analysis, order=(0,0,2), seasonal_order=(2,0,3,6), enforce_stationarity=False).fit()
-
+    # final_model = auto_arima(series_analysis)
     # predict
     predict = final_model.predict()
 
@@ -180,10 +218,13 @@ def update_table(request):
             f = open('static/series.csv', "rb")
             myfile = File(f)
 
+            recent_case = Case.objects.all().first()
+            skips = recent_case.skips
+
         except ValueError:
             return Response(status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
-        new_record = Case(start_date=start_date)
+        new_record = Case(start_date=start_date, skips=skips)
         new_record.csv_file.save("series.csv", myfile)
         new_record.save()
 
