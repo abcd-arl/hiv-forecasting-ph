@@ -22,7 +22,7 @@ export default function LoginForm({ cookies, setCookie }) {
 						setIsLoggingIn(true);
 						axios
 							// .post('http://35.93.57.77:8000/api/dj-rest-auth/login/', values)
-							.post('http://127.0.0.1:8000/api/dj-rest-auth/login/', values)
+							.post('http://35.93.57.77:8000/api/dj-rest-auth/login/', values)
 							.then((response) => {
 								setIsLoggingIn(false);
 								setCookie('token', response.data.key, { path: '/', maxAge: 1000, secure: true, sameSite: 'strict' });

@@ -45,7 +45,7 @@ export default function Admin({
 	useEffect(() => {
 		if (data.length === 0 && cookies.token) {
 			axios
-				.get('http://127.0.0.1:8000/api/v1/update-table/', {
+				.get('http://35.93.57.77:8000/api/v1/update-table/', {
 					headers: {
 						Authorization: `Token ${cookies.token}`,
 					},
