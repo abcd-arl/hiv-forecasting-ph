@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import Table from '../Table/Table';
 import LineChart from '../LineChart/LineChart';
@@ -6,21 +6,33 @@ import LineChartRanged from '../LineChartRanged/LineChartRanged';
 import BarChart from '../BarChart/BarChart';
 import Error from '../Error/Error';
 import Loading from '../Loading/Loading';
+import { ActionIcon } from '@mantine/core';
+import { IconTableAlias } from '@tabler/icons';
 
 export default function User({ data, setData, defValLastIndex, setDefValLastIndex, tableRef }) {
 	const [isLoadingCharts, setIsLoadingCharts] = useState(false);
 	const [isLoadingTable, setIsLoadingTable] = useState(false);
+	const [skips, setSkips] = useState({
+		initialDates: [],
+		finalDates: [],
+	});
+	const [forecastingMethodInput, setForecastingMethodInput] = useState(null);
 
 	useEffect(() => {
 		if (data.length === 0) {
-			// http://127.0.0.1:8000/api/v1/forecast/
 			axios
-				.get('http://35.89.128.109:8000/api/v1/forecast/')
+				.get('http://127.0.0.1:8000/api/v1/forecast/')
 				.then((response) => {
+					setSkips({
+						initialDates: structuredClone(response.data.skips),
+						finalDates: structuredClone(response.data.skips),
+					});
+					setForecastingMethodInput(response.data.forecastingMethod);
 					setData(response.data);
 					setDefValLastIndex(response.data.actual.cases.length - 1);
 				})
 				.catch((error) => {
+					console.log(error);
 					setData(null);
 				});
 		}
@@ -31,6 +43,11 @@ export default function User({ data, setData, defValLastIndex, setDefValLastInde
 
 	return (
 		<>
+			<a href="#table" className="absolute top-30 right-40">
+				<ActionIcon variant="default" size="30px">
+					<IconTableAlias size={16} />
+				</ActionIcon>
+			</a>
 			<div className="relative w-full h-fit">
 				{isLoadingCharts && <Loading />}
 				<div className={isLoadingCharts ? `opacity-50` : ''}>
@@ -46,8 +63,8 @@ export default function User({ data, setData, defValLastIndex, setDefValLastInde
 						/>
 					</div>
 					<div className="relative mb-10 md:flex gap-4">
-						<div className="md:w-2/4">
-							<BarChart datasets={[data.forecast]} colors={['#e7625f']} title={'12-Month Forecast'} />
+						<div className="md:w-2/4 mt-12">
+							<BarChart datasets={[data.forecast]} colors={['#e7625f']} title={'Forecast'} />
 						</div>
 						<div className="relative md:w-2/4">
 							<LineChartRanged initialTitle={'Actual Values'} dataset={data.actual} color={'blue'} />
@@ -55,10 +72,13 @@ export default function User({ data, setData, defValLastIndex, setDefValLastInde
 					</div>
 				</div>
 			</div>
-			<div className="relative w-full h-fit">
+			<div id="table" className="relative w-full h-fit">
 				<Table
 					dataset={data.raw}
-					skips={data.skips}
+					forecastingMethodInput={forecastingMethodInput}
+					setForecastingMethodInput={setForecastingMethodInput}
+					skips={skips}
+					setSkips={setSkips}
 					setData={setData}
 					tableRef={tableRef}
 					defValLastIndex={defValLastIndex}
@@ -69,4 +89,11 @@ export default function User({ data, setData, defValLastIndex, setDefValLastInde
 			</div>
 		</>
 	);
+}
+
+function getSkipDates(skips) {
+	return skips.map((skip) => [
+		new Date(skip.startDate[0], skip.startDate[1], 0),
+		new Date(skip.startDate[0], skip.startDate[1] + skip.length - 1, 0),
+	]);
 }

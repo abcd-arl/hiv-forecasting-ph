@@ -13,16 +13,23 @@ function App() {
 
 	const [dataUser, setDataUser] = useState([]);
 	const [dataAdmin, setDataAdmin] = useState([]);
+
 	const tableUserRef = useRef(null);
 	const tableAdminRef = useRef(null);
-	const adminFirstRun = useRef(true);
+
+	const isAllowedDataUserRerender = useRef(false);
+	const isAdminFirstRun = useRef(true);
 
 	const location = useLocation();
 
 	useEffect(() => {
-		if (!adminFirstRun) {
+		// to reload the homepage when 'dataAdmin' changes,
+		// but not on first load of admin dashboard
+		if (isAllowedDataUserRerender.current) {
 			setDataUser([]);
 			tableUserRef.current = null;
+		} else if (!isAdminFirstRun.current) {
+			isAllowedDataUserRerender.current = true;
 		}
 	}, [dataAdmin]);
 
@@ -88,7 +95,7 @@ function App() {
 											tableRef={tableAdminRef}
 											cookies={cookies}
 											setCookie={setCookie}
-											isFirstRun={adminFirstRun}
+											isFirstRun={isAdminFirstRun}
 										/>
 									}
 								/>
@@ -104,8 +111,7 @@ function App() {
 		if (window.confirm('You are about to logout as admin. Continue?')) {
 			axios
 				.post(
-					// 'http://127.0.0.1:8000/api/dj-rest-auth/logout/',
-					'http://35.89.128.109:8000/api/dj-rest-auth/logout/',
+					'http://127.0.0.1:8000/api/dj-rest-auth/logout/',
 					{},
 					{
 						headers: {

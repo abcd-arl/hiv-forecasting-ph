@@ -1,13 +1,17 @@
 import { useRef, useState } from 'react';
 import axios from 'axios';
 import UploadFile from '../UploadFile/UploadFile';
+import Drop from '../Drop/Drop';
 import TableInstruction from '../TableInstruction/TableInstruction';
 import { notify } from '../Notify/Notify';
-import { Button, Divider, Input } from '@mantine/core';
+import { Button, Divider, Input, Select } from '@mantine/core';
 
 export default function TableOption({
 	table,
+	forecastingMethodInput,
+	setForecastingMethodInput,
 	skips,
+	setSkips,
 	dispatch,
 	defValLastIndex,
 	setDefValLastIndex,
@@ -21,6 +25,8 @@ export default function TableOption({
 	const inputNumRef = useRef(null);
 	const inputDateRef = useRef(null);
 	const [isInputDateEmpty, setIsInputDateEmpty] = useState(false);
+
+	console.log(table);
 
 	const toDateStrFormat = (array) =>
 		`${array[0]}-${String(array[1]).length === 2 ? array[1] : '0' + array[1]}-${
@@ -43,6 +49,7 @@ export default function TableOption({
 				>
 					{table.activity.status === 'selecting' ? 'Cancel' : 'Select'}
 				</Button>
+
 				<Divider orientation="vertical" className="mx-1" />
 				<UploadFile
 					dispatch={dispatch}
@@ -73,6 +80,16 @@ export default function TableOption({
 			</div>
 			<div className="flex gap-1.5">
 				<TableInstruction />
+				{/* <Select
+					size="xs"
+					defaultValue={forecastingMethodInput}
+					placeholder="Choose a forecasting method"
+					data={[
+						{ value: '1', label: 'Grid Search - SARIMA' },
+						{ value: '2', label: 'pmdarima.arima.auto_arima' },
+					]}
+					onChange={(value) => setForecastingMethodInput(value)}
+				/> */}
 				<Button
 					size="xs"
 					className="px-2 bg-slate-500 hover:bg-slate-500 disabled:bg-slate-200 rounded font-bold text-white"
@@ -81,6 +98,7 @@ export default function TableOption({
 				>
 					Save
 				</Button>
+				{/* <Drop skips={skips} setSkips={setSkips} tableValuesLen={table.values.length} startDate={table.startDate} /> */}
 				{isAdmin ? (
 					<>
 						<input
@@ -159,8 +177,7 @@ export default function TableOption({
 
 		axios
 			.post(
-				// 'http://35.93.57.77:8000/api/v1/forecast/',
-				'http://35.89.128.109:8000/api/v1/forecast/',
+				'http://127.0.0.1:8000/api/v1/forecast/',
 				{
 					cases: cases,
 					startDate: startDate,
@@ -188,15 +205,15 @@ export default function TableOption({
 		setIsLoadingCharts(true);
 		setIsLoadingTable(true);
 		const cases = table.finalValues.map((value) => (value === 'NaN' ? null : parseInt(value)));
-
+		console.log('aiejfgiejfiafoe', skips.finalDates);
 		axios
 			.post(
 				// 'http://35.93.57.77:8000/api/v1/update-table/',
-				'http://35.89.128.109:8000/api/v1/update-table/',
+				'http://127.0.0.1:8000/api/v1/update-table/',
 				{
 					cases: cases,
 					startDate: inputDateRef.current.value,
-					// skips: skips,
+					skips: skips.finalDates,
 				},
 				{
 					headers: {

@@ -17,8 +17,8 @@ ChartJS.register(TimeSeriesScale, LinearScale, PointElement, LineElement, Title,
 export default function LineChart({
 	title,
 	datasets,
-	colors,
 	skips = [],
+	colors,
 	y_title = 'Number of Cases',
 	borderDashes = null,
 	isWide = false,
@@ -28,13 +28,18 @@ export default function LineChart({
 	const annotations = [];
 	const data = {
 		datasets: datasets.map((dataset, idx) => {
-			if (skips) {
+			if (idx === datasets.length - 1 && Object.keys(skips).length !== 0) {
 				skips.map((skip) => {
 					const xMin = new Date(...skip.startDate);
 					const xMax = new Date(skip.startDate[0], skip.startDate[1] + skip.length - 1, 0);
-					const totalMonthsFromStart = getMonthDifference([new Date(datasets[0].startDate), xMin]);
-					const yMin = Math.max(...datasets[0].cases.slice(totalMonthsFromStart, totalMonthsFromStart + skip.length));
-					const yMax = yMin + 400;
+					const yMin =
+						Math.max(
+							...[].concat.apply(
+								[],
+								datasets.map((dataset) => dataset.cases)
+							)
+						) + 200;
+					const yMax = yMin;
 
 					annotations.push(
 						{
@@ -102,6 +107,28 @@ export default function LineChart({
 				label: dataset.name,
 				data: (() => {
 					const cases = [];
+
+					// const loopLength = isAffectedBySkips[idx] ? datasets[0].cases.length : dataset.cases.length;
+					// let i = 0;
+					// let j = 0;
+					// if (isAffectedBySkips && Object.keys(skipIndices).length !== 0) {
+					// 	console.log(skipIndices, 'HEEREREREREE');
+					// 	while (i < loopLength && j < dataset.cases.length) {
+					// 		if (isAffectedBySkips[idx] && skipIndices[i].length > 0) {
+					// 			i = i + 1;
+					// 		} else {
+					// 			cases.push({
+					// 				x: new Date(dataset.startDate[0], dataset.startDate[1] + i, 0),
+					// 				y: dataset.cases[j],
+					// 			});
+
+					// 			j = j + 1;
+					// 			i = i + 1;
+					// 		}
+					// 	}
+					// }
+
+					// console.log(dataset.name, cases, dataset.cases);
 
 					for (let i = 0; i < dataset.cases.length; i++) {
 						cases.push({
@@ -217,7 +244,6 @@ export default function LineChart({
 
 // returns how many months in between dates
 function getMonthDifference([startDate, endDate]) {
-	console.log(startDate, endDate);
 	return endDate.getMonth() - startDate.getMonth() + 12 * (endDate.getFullYear() - startDate.getFullYear());
 }
 

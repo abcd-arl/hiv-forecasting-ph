@@ -42,7 +42,6 @@ export default function LineChartRanged({ initialTitle, dataset, color }) {
 
 	return (
 		<>
-			<LineChart title={finalTitle} datasets={[datasetRanged]} colors={[color]} pointRadius={2} />
 			<DateRangePicker
 				size="xs"
 				icon={<IconCalendarEvent size={18} />}
@@ -56,6 +55,7 @@ export default function LineChartRanged({ initialTitle, dataset, color }) {
 				className="w-[47.5%] min-w-[300px]"
 				description={'The days in the dates are being disregarded.'}
 			/>
+			<LineChart title={finalTitle} datasets={[datasetRanged]} colors={[color]} pointRadius={2} />
 		</>
 	);
 }

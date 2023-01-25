@@ -199,7 +199,10 @@ const reducer = (state, action) => {
 
 export default function Table({
 	dataset,
+	forecastingMethodInput,
+	setForecastingMethodInput,
 	skips,
+	setSkips,
 	setData,
 	tableRef,
 	defValLastIndex,
@@ -274,6 +277,7 @@ export default function Table({
 
 	const tableRows = (() => {
 		let startYear = table.startDate[0];
+		console.log(startYear);
 		const rows = [];
 		let row =
 			table.startDate[1] > 1
@@ -367,7 +371,10 @@ export default function Table({
 		<div className="w-[100%]">
 			<TableOption
 				table={table}
+				forecastingMethodInput={forecastingMethodInput}
+				setForecastingMethodInput={setForecastingMethodInput}
 				skips={skips}
+				setSkips={setSkips}
 				dispatch={dispatch}
 				defValLastIndex={defValLastIndex}
 				setDefValLastIndex={setDefValLastIndex}
@@ -393,7 +400,7 @@ export default function Table({
 					<tbody className="w-full overflow-scroll">{tableRows}</tbody>
 				</table>
 			</div>
-			{/* <Settings dataset={dataset} skipsData={skips} /> */}
+			{/* <Settings dataset={dataset} skipsData={skips.initialDates} /> */}
 		</div>
 	);
 }
