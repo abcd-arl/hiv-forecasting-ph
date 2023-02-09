@@ -30,7 +30,7 @@ function App() {
 	useEffect(() => {
 		axios
 			// .get('http://35.93.57.77:8000/api/v1/forecast/')
-			.get('http://35.89.128.109:8000/api/v1/forecast/')
+			.get('http://127.0.0.1:8000/api/v1/forecast/')
 			.then((response) => {
 				const actualCasesLen = response.data.actual.cases.length;
 				setData(response.data);

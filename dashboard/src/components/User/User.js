@@ -21,7 +21,7 @@ export default function User({ data, setData, defValLastIndex, setDefValLastInde
 	useEffect(() => {
 		if (data.length === 0) {
 			axios
-				.get('http://35.93.57.77:8000/api/v1/forecast/')
+				.get('http://127.0.0.1:8000/api/v1/forecast/')
 				.then((response) => {
 					setSkips({
 						initialDates: structuredClone(response.data.skips),

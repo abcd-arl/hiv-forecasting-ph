@@ -177,7 +177,7 @@ export default function TableOption({
 
 		axios
 			.post(
-				'http://35.93.57.77:8000/api/v1/forecast/',
+				'http://127.0.0.1:8000/api/v1/forecast/',
 				{
 					cases: cases,
 					startDate: startDate,
@@ -209,7 +209,7 @@ export default function TableOption({
 		axios
 			.post(
 				// 'http://35.93.57.77:8000/api/v1/update-table/',
-				'http://35.93.57.77:8000/api/v1/update-table/',
+				'http://127.0.0.1:8000/api/v1/update-table/',
 				{
 					cases: cases,
 					startDate: inputDateRef.current.value,
