@@ -1,0 +1,340 @@
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
+from django.core.files import File
+
+import math
+import s3fs
+import boto3
+import pickle
+import joblib
+from urllib.request import urlopen
+from io import StringIO 
+
+
+import datetime
+import pandas as pd
+import numpy as np
+import statsmodels.api as sm
+from pmdarima.arima import auto_arima
+from sklearn.metrics import mean_absolute_error, mean_squared_error, mean_absolute_percentage_error
+
+from .models import Case
+
+def get_starting_indices(skipped_indices, series_len):
+    # get starting indices: training, validation, forecast
+    ## get the first index that is not skipped (training)
+    firstNotSkippedIndex = 0
+    for i in range(len(skipped_indices)):
+        if not skipped_indices[i]:
+            firstNotSkippedIndex = i
+            break
+
+    ## get the last index that is not skipped (forecast)
+    lastNotSkippedIndex = series_len - 1
+    for i in range(len(skipped_indices) - 1, 0, -1): 
+        if not skipped_indices[i]:
+            lastNotSkippedIndex = i
+            break
+    
+    ## get the last twelve index that is not skipped (validation)
+    lastTwelveNotSkippedIndex = series_len - 13
+    count = 0
+    for i in range(len(skipped_indices) - 1, 0, -1): 
+        if not skipped_indices[i]:
+            count = count + 1
+        if count == 12:
+            lastTwelveNotSkippedIndex = i
+
+    starting_indices = {
+        "firstNotSkippedIndex": firstNotSkippedIndex,
+        "lastTwelveNotSkippedIndex": lastTwelveNotSkippedIndex,
+        "lastNotSkippedIndex": lastNotSkippedIndex
+    }
+
+    return starting_indices
+
+def get_index_to_skips(series, start_date, skips):
+    series_len = len(series)
+    skipped_indices = pd.Series([False] * series_len)
+    skipped_indices.index = pd.date_range(start=
+                    pd.Period('{}-{}'.format(start_date[0], start_date[1]),freq='M').end_time.date(),
+                    periods=series_len,
+                    freq='M'
+    )
+
+    for skip in skips:
+        skip_start_date = str(pd.Period('{}-{}'.format(skip["startDate"][0], skip["startDate"][1]),freq='M').end_time.date())
+        start_loop = skipped_indices.index.get_loc(skip_start_date)
+
+        for i in range(start_loop, start_loop + skip["length"]):
+            try:
+                skipped_indices[i] = True
+            except IndexError:
+                break
+    
+    return skipped_indices
+
+def perform_auto_arima(series_values):
+    model = auto_arima(series_values, start_p=0, start_q=0, start_P=0, start_Q=0, suppress_warnings=True, error_action='ignore')
+    joblib.dump(model, 'static/model.pkl')
+    return model
+    
+def perform_grid_search_sarima(series_values):
+    train, test = series_values[:len(series_values) - 12], series_values[len(series_values) - 12:]
+    least_RMSE = 100000
+    combination = ()
+    best_model = ''
+    actual = test
+    for p in range(0,4):
+        for q in range(0,4):
+            for P in range(0,4):
+                for Q in range(0,4):
+                    for lag in [3,6,12]:
+                        d = 0
+                        D = 0
+                        
+                        try:
+                            mod_sarimax = sm.tsa.SARIMAX(train, order=(p,d,q), seasonal_order=(P,D,Q,lag))
+                            model = mod_sarimax.fit()
+                            predicted = model.forecast(12)
+                            MSE = np.square(np.subtract(actual, predicted)).mean()
+                            RMSE = math.sqrt(MSE)
+                            print(p,q,P,Q,lag,RMSE)
+
+                            if RMSE < least_RMSE:
+                                least_RMSE = RMSE
+                                combination = ((p,d,q),(P,D,Q,lag))
+                                best_model = model
+
+                        except:
+                            pass
+    print("Combination with Least RMSE ")
+    print(combination)
+    print("RMSE value: "+ str(least_RMSE))
+    model = sm.tsa.SARIMAX(series_values, order=combination[0], seasonal_order=combination[1], enforce_stationarity=False).fit()
+    model.save('static/model.pkl')
+    return model
+
+def generate_forecast(series, model=None, method=None, skips=None):
+    series_raw = series.copy()
+    series_raw = series_raw.fillna('NaN')
+
+    series_filled = series.copy()
+    series_filled = series_filled.ffill()
+
+    # cases that are wanted for model fitting
+    series_analysis = series_filled.tolist()
+    skipped_indices = []
+    starting_indices = {
+        "firstNotSkippedIndex": 0,
+        "lastTwelveNotSkippedIndex": len(series) - 13,
+        "lastNotSkippedIndex": len(series) - 1
+    }
+    if (skips):
+        skipped_indices = get_index_to_skips(series, str(series.index[0]).split("-"), skips)
+        series_analysis = [series_analysis[i] for i in range(len(series)) if not skipped_indices[i]]
+        starting_indices = get_starting_indices(skipped_indices, len(series))
+    
+    # # set training and testing data
+    # train = series_analysis[:len(series_analysis)-12]
+    # test = series_analysis[len(series_analysis)-12:]
+
+    # # fit model
+    # initial_model = None
+    # try:
+    #     initial_model = sm.tsa.SARIMAX(train, order=(0,0,2), seasonal_order=(2,0,3,6)).fit()
+    # except: 
+    #     initial_model = sm.tsa.SARIMAX(train, order=(0,0,2), seasonal_order=(2,0,3,6), enforce_stationarity=False).fit()
+    # final_model = sm.tsa.SARIMAX(series_analysis, order=(0,0,2), seasonal_order=(2,0,3,6), enforce_stationarity=False).fit()
+    # final_model.save('static/model.pkl')
+
+    forecast = None
+    final_model = None
+
+    print('AHRHAERHAJR', method)
+    if model is None:
+        if method == '1':
+            final_model = perform_grid_search_sarima(series_analysis)
+            forecast = pd.Series(final_model.forecast(len(series) - starting_indices['lastNotSkippedIndex'] + 12), name='Forecast')
+        else:
+            final_model = perform_auto_arima(series_analysis)
+            forecast = pd.Series(final_model.predict(len(series) - starting_indices['lastNotSkippedIndex'] + 12), name='Forecast')     
+    else:
+        final_model = model
+        if method == '1':
+            forecast = pd.Series(final_model.forecast(len(series) - starting_indices['lastNotSkippedIndex'] + 12), name='Forecast')
+        else:
+            forecast = pd.Series(final_model.predict(len(series) - starting_indices['lastNotSkippedIndex'] + 12), name='Forecast')
+    
+    
+    
+    # forecast = pd.Series(final_model.forecast(len(series) - starting_indices["lastNotSkippedIndex"] + 12), name='Forecast')
+    
+    # predict   
+    # predict = final_model.predict()
+
+    # get validation, residuals
+    # validation = pd.Series(initial_model.forecast(len(test)))
+    # residuals = test - validation
+    
+    # get performance measeures
+    # mae = mean_absolute_error(series_analysis, predict)
+    # mse = mean_squared_error(series_analysis, predict, squared=False)
+    # mape = mean_absolute_percentage_error(series_analysis, predict)
+
+    # forecast
+    
+
+    return {
+        "raw": {
+            "name": "Raw",
+            "startDate": [series_raw.index[0].year, series_raw.index[0].month, series_raw.index[0].day],
+            "cases": series_raw.tolist(),
+        },
+        "actual": {
+            "name": "Actual",
+            "startDate": [series_filled.index[0].year, series_filled.index[0].month, series_filled.index[0].day],
+            "cases": series_filled.tolist(),
+        },
+        # "predict": {
+        #     "name": "Predict",
+        #     "startDate": [
+        #                     series.index[starting_indices["firstNotSkippedIndex"]].year,
+        #                     series.index[starting_indices["firstNotSkippedIndex"]].month
+        #                 ],
+        #     "cases": predict.tolist()
+        # },
+        # "validation" : {
+        #     "name": "Validation",
+        #     "startDate": [
+        #                     series.index[starting_indices["lastTwelveNotSkippedIndex"]].year,
+        #                     series.index[starting_indices["lastTwelveNotSkippedIndex"]].month
+        #                 ],
+        #     "cases": validation.tolist(),
+        # },
+        # "residuals": {
+        #     "name": "Residuals",
+        #     "startDate": [
+        #                     series.index[starting_indices["lastTwelveNotSkippedIndex"]].year,
+        #                     series.index[starting_indices["lastTwelveNotSkippedIndex"]].month
+        #                 ],
+        #     "cases": residuals.tolist()
+        # },
+        "forecast": {
+            "name": "Forecast",
+            "startDate": [
+                            series.index[starting_indices["lastNotSkippedIndex"]].year, 
+                            series.index[starting_indices["lastNotSkippedIndex"]].month + 1
+                        ],
+            "cases": forecast.tolist()
+        },
+        "performanceMeasures": {
+            "mae": 1,
+            "mse": 1,
+            "mape": 1 
+        },
+        "skipIndices": skipped_indices
+    }
+
+@api_view(['GET', 'POST'])
+def forecast(request):
+    # read data, convert to pd.Series, and add date index
+    series = []
+    skips = None
+    data = None
+    if request.method == 'GET':
+        recent_case = Case.objects.all().first()
+        
+        csv_file_path = recent_case.csv_file.url
+        series = pd.read_csv(csv_file_path)
+        series = series.iloc[:, 0]
+        series.index = pd.date_range(start=recent_case.start_date, periods=len(series), freq='M')
+
+        model_file_path = recent_case.model.url
+        model = joblib.load(urlopen(model_file_path))
+        
+        skips = recent_case.skips
+        forecasting_method = recent_case.forecasting_method
+
+        data = generate_forecast(series, method=forecasting_method, model=model, skips=skips )
+
+    elif request.method == 'POST':
+        start_date = datetime.datetime.strptime("{}-{}-{}".format(request.data['startDate'][0], request.data['startDate'][1], request.data['startDate'][2]), '%Y-%m-%d').date()
+        series = pd.Series([int(value) if value else None for value in request.data['cases']], name='Cases')
+        series.index = pd.date_range(start=start_date , periods=len(request.data['cases']), freq='M')
+        forecasting_method = request.data['forecastingMethod']
+        # advised to get it from request
+        recent_case = Case.objects.all().first()
+        skips = recent_case.skips
+
+        data = generate_forecast(series, method=forecasting_method, skips=skips)
+
+    return Response({"raw": data["raw"], "actual": data["actual"], "forecast": data["forecast"], "skips": skips, "forecastingMethod": forecasting_method})
+
+@api_view(['GET', 'POST'])
+@permission_classes((IsAuthenticated, ))
+def update_table(request):
+    if request.method == 'POST':
+        try:
+            start_date = datetime.datetime.strptime(request.data['startDate'], '%Y-%m-%d').date()
+            series = pd.Series([int(value) if value else None for value in request.data['cases']], name='Cases')
+
+            bucket = "hiv-forecasting-ph-bucket"
+            csv_buffer = StringIO()
+            series.to_csv(csv_buffer, index=False)
+
+            s3_resource = boto3.resource('s3')
+            s3_resource.Object(bucket, 'series.csv').put(Body=csv_buffer.getvalue())
+            s3_resource.Bucket(bucket).download_file('series.csv', 'static/series.csv')
+            f = open('static/series.csv', "rb")
+            myfile_csv = File(f)
+
+            series.index = pd.date_range(start=start_date, periods=len(series), freq='M')
+            forecasting_method = request.data['forecastingMethod']
+            skips = request.data['skips']
+            data = generate_forecast(series, method=forecasting_method, skips=skips)
+
+            pickle_byte_obj = pickle.dumps('static/model.pkl')
+            s3_resource.Object(bucket, 'model.pkl').put(Body=pickle_byte_obj)
+            s3_resource.Bucket(bucket).download_file('model.pkl', 'static/model.pkl')
+            e = open('static/series.csv', "rb")
+            myfile_model = File(e)
+
+
+            new_record = Case(start_date=start_date)
+            new_record.csv_file.save("series.csv", myfile_csv)
+            new_record.model.save("model.pkl", myfile_model)
+            new_record.save()
+
+            return Response({
+                'success': False
+            })
+
+        except ValueError:
+            return Response(status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
+
+    # if request.method == 'GET':
+    #     # the same from GET method in forecast view
+    #     recent_case = Case.objects.all().first()
+    #     skips = recent_case.skips
+    #     csv_file_path = recent_case.csv_file.url
+    #     series = pd.read_csv(csv_file_path)
+    #     series = series.iloc[:, 0]
+    #     series.index = pd.date_range(start=recent_case.start_date, periods=len(series), freq='M')
+    
+    # data = generate_forecast(series, skips)
+    # return Response({   "raw": data["raw"], 
+    #                     "actual": data["actual"],
+    #                     "predict": data["predict"],
+    #                     "validation": data["validation"],
+    #                     "forecast": data["forecast"],
+    #                     "residuals": data["residuals"], 
+    #                     "performanceMeasures": data["performanceMeasures"],
+    #                     "skips": skips
+    #                 })
+
+    return Response({
+                'success': True
+            })
